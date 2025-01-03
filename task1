@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+import sys
+
+TRANSACTION_SIZES = {'BALANCE': 2, 'TRANSFER': 5, 'INVOICE': 4}
+
+def process_transactions_by_order(lines, transaction_order):
+    line_index = 1  # start parsing at the second line
+    result = []
+    transaction_requests = {}
+
+    # Initialize the requests based on the given order, other transaction set to -1 meaning null 
+    if transaction_order == 'A':
+        transaction_requests['BALANCE'] = lines[line_index]
+        transaction_requests['TRANSFER'] = -1
+        transaction_requests['INVOICE'] = -1
+    elif transaction_order == 'B':
+        transaction_requests['BALANCE'] = lines[line_index]
+        transaction_requests['INVOICE'] = -1
+        transaction_requests['TRANSFER'] = -1
+    elif transaction_order == 'C':
+        transaction_requests['TRANSFER'] = lines[line_index]
+        transaction_requests['BALANCE'] = -1
+        transaction_requests['INVOICE'] = -1
+    elif transaction_order == 'D':
+        transaction_requests['TRANSFER'] = lines[line_index]
+        transaction_requests['INVOICE'] = -1
+        transaction_requests['BALANCE'] = -1
+    elif transaction_order == 'E':
+        transaction_requests['INVOICE'] = lines[line_index]
+        transaction_requests['BALANCE'] = -1
+        transaction_requests['TRANSFER'] = -1
+    elif transaction_order == 'F':
+        transaction_requests['INVOICE'] = lines[line_index]
+        transaction_requests['TRANSFER'] = -1
+        transaction_requests['BALANCE'] = -1
+
+    while line_index < len(lines):
+        if 'BALANCE' in transaction_requests and transaction_requests['BALANCE'] != -1 and lines[line_index] == transaction_requests['BALANCE']:
+            result.append('BALANCE')
+            line_index += TRANSACTION_SIZES['BALANCE']
+        elif 'TRANSFER' in transaction_requests and transaction_requests['TRANSFER'] != -1 and lines[line_index] == transaction_requests['TRANSFER']:
+            result.append('TRANSFER')
+            line_index += TRANSACTION_SIZES['TRANSFER']
+        elif 'INVOICE' in transaction_requests and transaction_requests['INVOICE'] != -1 and lines[line_index] == transaction_requests['INVOICE']:
+            result.append('INVOICE')
+            line_index += TRANSACTION_SIZES['INVOICE']
+        else:
+            # Handle missing transaction types and update requests based on the order
+            if transaction_order == 'A':
+                if transaction_requests['TRANSFER'] == -1:
+                    transaction_requests['TRANSFER'] = lines[line_index]
+                    result.append('TRANSFER')
+                    line_index += TRANSACTION_SIZES['TRANSFER']
+                elif transaction_requests['INVOICE'] == -1:
+                    transaction_requests['INVOICE'] = lines[line_index]
+                    result.append('INVOICE')
+                    line_index += TRANSACTION_SIZES['INVOICE']
+                else:
+                    return []
+            elif transaction_order == 'B':
+                if transaction_requests['INVOICE'] == -1:
+                    transaction_requests['INVOICE'] = lines[line_index]
+                    result.append('INVOICE')
+                    line_index += TRANSACTION_SIZES['INVOICE']
+                elif transaction_requests['TRANSFER'] == -1:
+                    transaction_requests['TRANSFER'] = lines[line_index]
+                    result.append('TRANSFER')
+                    line_index += TRANSACTION_SIZES['TRANSFER']
+                else:
+                    return []
+            elif transaction_order == 'C':
+                if transaction_requests['BALANCE'] == -1:
+                    transaction_requests['BALANCE'] = lines[line_index]
+                    result.append('BALANCE')
+                    line_index += TRANSACTION_SIZES['BALANCE']
+                elif transaction_requests['INVOICE'] == -1:
+                    transaction_requests['INVOICE'] = lines[line_index]
+                    result.append('INVOICE')
+                    line_index += TRANSACTION_SIZES['INVOICE']
+                else:
+                    return []
+            elif transaction_order == 'D':
+                if transaction_requests['INVOICE'] == -1:
+                    transaction_requests['INVOICE'] = lines[line_index]
+                    result.append('INVOICE')
+                    line_index += TRANSACTION_SIZES['INVOICE']
+                elif transaction_requests['BALANCE'] == -1:
+                    transaction_requests['BALANCE'] = lines[line_index]
+                    result.append('BALANCE')
+                    line_index += TRANSACTION_SIZES['BALANCE']
+                else:
+                    return []
+            elif transaction_order == 'E':
+                if transaction_requests['BALANCE'] == -1:
+                    transaction_requests['BALANCE'] = lines[line_index]
+                    result.append('BALANCE')
+                    line_index += TRANSACTION_SIZES['BALANCE']
+                elif transaction_requests['TRANSFER'] == -1:
+                    transaction_requests['TRANSFER'] = lines[line_index]
+                    result.append('TRANSFER')
+                    line_index += TRANSACTION_SIZES['TRANSFER']
+                else:
+                    return []
+            elif transaction_order == 'F':
+                if transaction_requests['TRANSFER'] == -1:
+                    transaction_requests['TRANSFER'] = lines[line_index]
+                    result.append('TRANSFER')
+                    line_index += TRANSACTION_SIZES['TRANSFER']
+                elif transaction_requests['BALANCE'] == -1:
+                    transaction_requests['BALANCE'] = lines[line_index]
+                    result.append('BALANCE')
+                    line_index += TRANSACTION_SIZES['BALANCE']
+                else:
+                    return []
+            else:
+                return []
+
+    return result
+
+
+def main():
+    filename = sys.argv[1]
+    lines = []
+    try:
+        with open(filename, 'rb') as input_file:
+            while True:
+                data = input_file.read(16)
+                if not data:
+                    break
+                lines.append(data.hex())
+    except FileNotFoundError:
+        print(f'Error: File {filename} not found.', file=sys.stderr)
+        sys.exit(1)
+
+    # trying each order of deciphering
+    for transaction_order in ['A', 'B', 'C', 'D', 'E', 'F']:
+        result = process_transactions_by_order(lines, transaction_order)
+        if result:
+            print("\n".join(result))
+            return
+
+
+if __name__ == '__main__':
+    main()

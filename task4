@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+import sys
+from collections import defaultdict
+
+OPERATIONS = {'BALANCE': 2, 'TRANSFER': 5, 'INVOICE': 4}
+
+def handle_lines_with_sequence(input_lines, sequence):
+    line_index = 1  # start at the second line
+    action_output = []
+    operation_tracker = {}
+    account_usage = defaultdict(int)
+
+    if sequence == 'A':
+        operation_tracker['BALANCE'] = input_lines[line_index]
+        operation_tracker['TRANSFER'] = -1
+        operation_tracker['INVOICE'] = -1
+    elif sequence == 'B':
+        operation_tracker['BALANCE'] = input_lines[line_index]
+        operation_tracker['INVOICE'] = -1
+        operation_tracker['TRANSFER'] = -1
+    elif sequence == 'C':
+        operation_tracker['TRANSFER'] = input_lines[line_index]
+        operation_tracker['BALANCE'] = -1
+        operation_tracker['INVOICE'] = -1
+    elif sequence == 'D':
+        operation_tracker['TRANSFER'] = input_lines[line_index]
+        operation_tracker['INVOICE'] = -1
+        operation_tracker['BALANCE'] = -1
+    elif sequence == 'E':
+        operation_tracker['INVOICE'] = input_lines[line_index]
+        operation_tracker['BALANCE'] = -1
+        operation_tracker['TRANSFER'] = -1
+    elif sequence == 'F':
+        operation_tracker['INVOICE'] = input_lines[line_index]
+        operation_tracker['TRANSFER'] = -1
+        operation_tracker['BALANCE'] = -1
+
+    while line_index < len(input_lines):
+        if 'BALANCE' in operation_tracker and operation_tracker['BALANCE'] != -1 and input_lines[line_index] == operation_tracker['BALANCE']:
+            action_output.append('BALANCE')
+            account_usage[input_lines[line_index - 1]] += 1
+            line_index += OPERATIONS['BALANCE']
+        elif 'TRANSFER' in operation_tracker and operation_tracker['TRANSFER'] != -1 and input_lines[line_index] == operation_tracker['TRANSFER']:
+            action_output.append('TRANSFER')
+            account_usage[input_lines[line_index - 1]] += 1
+            account_usage[input_lines[line_index + 3]] += 1
+            line_index += OPERATIONS['TRANSFER']
+        elif 'INVOICE' in operation_tracker and operation_tracker['INVOICE'] != -1 and input_lines[line_index] == operation_tracker['INVOICE']:
+            action_output.append('INVOICE')
+            account_usage[input_lines[line_index - 1]] += 1
+            account_usage[input_lines[line_index + 2]] += 1
+            line_index += OPERATIONS['INVOICE']
+        else:
+            account_usage[input_lines[line_index - 1]] += 1
+            if sequence == 'A':
+                if operation_tracker['TRANSFER'] == -1:
+                    operation_tracker['TRANSFER'] = input_lines[line_index]
+                    action_output.append('TRANSFER')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    account_usage[input_lines[line_index + 3]] += 1
+                    line_index += OPERATIONS['TRANSFER']
+                elif operation_tracker['INVOICE'] == -1:
+                    operation_tracker['INVOICE'] = input_lines[line_index]
+                    action_output.append('INVOICE')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    account_usage[input_lines[line_index + 2]] += 1
+                    line_index += OPERATIONS['INVOICE']
+                else:
+                    return [], {}, {}
+            elif sequence == 'B':
+                if operation_tracker['INVOICE'] == -1:
+                    operation_tracker['INVOICE'] = input_lines[line_index]
+                    action_output.append('INVOICE')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    account_usage[input_lines[line_index + 2]] += 1
+                    line_index += OPERATIONS['INVOICE']
+                elif operation_tracker['TRANSFER'] == -1:
+                    operation_tracker['TRANSFER'] = input_lines[line_index]
+                    action_output.append('TRANSFER')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    account_usage[input_lines[line_index + 3]] += 1
+                    line_index += OPERATIONS['TRANSFER']
+                else:
+                    return [], {}, {}
+            elif sequence == 'C':
+                if operation_tracker['BALANCE'] == -1:
+                    operation_tracker['BALANCE'] = input_lines[line_index]
+                    action_output.append('BALANCE')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    line_index += OPERATIONS['BALANCE']
+                elif operation_tracker['INVOICE'] == -1:
+                    operation_tracker['INVOICE'] = input_lines[line_index]
+                    action_output.append('INVOICE')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    account_usage[input_lines[line_index + 2]] += 1
+                    line_index += OPERATIONS['INVOICE']
+                else:
+                    return [], {}, {}
+            elif sequence == 'D':
+                if operation_tracker['INVOICE'] == -1:
+                    operation_tracker['INVOICE'] = input_lines[line_index]
+                    action_output.append('INVOICE')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    account_usage[input_lines[line_index + 2]] += 1
+                    line_index += OPERATIONS['INVOICE']
+                elif operation_tracker['BALANCE'] == -1:
+                    operation_tracker['BALANCE'] = input_lines[line_index]
+                    action_output.append('BALANCE')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    line_index += OPERATIONS['BALANCE']
+                else:
+                    return [], {}, {}
+            elif sequence == 'E':
+                if operation_tracker['BALANCE'] == -1:
+                    operation_tracker['BALANCE'] = input_lines[line_index]
+                    action_output.append('BALANCE')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    line_index += OPERATIONS['BALANCE']
+                elif operation_tracker['TRANSFER'] == -1:
+                    operation_tracker['TRANSFER'] = input_lines[line_index]
+                    action_output.append('TRANSFER')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    account_usage[input_lines[line_index + 3]] += 1
+                    line_index += OPERATIONS['TRANSFER']
+                else:
+                    return [], {}, {}
+            elif sequence == 'F':
+                if operation_tracker['TRANSFER'] == -1:
+                    operation_tracker['TRANSFER'] = input_lines[line_index]
+                    action_output.append('TRANSFER')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    account_usage[input_lines[line_index + 3]] += 1
+                    line_index += OPERATIONS['TRANSFER']
+                elif operation_tracker['BALANCE'] == -1:
+                    operation_tracker['BALANCE'] = input_lines[line_index]
+                    action_output.append('BALANCE')
+                    account_usage[input_lines[line_index - 1]] += 1
+                    line_index += OPERATIONS['BALANCE']
+                else:
+                    return [], {}, {}
+            else:
+                return [], {}, {}
+
+    return action_output, operation_tracker, account_usage
+
+def main():
+    filename = sys.argv[1]
+    input_lines = []
+    try:
+        with open(filename, 'rb') as input_file:
+            while True:
+                data = input_file.read(16)
+                if not data:
+                    break
+                input_lines.append(data.hex())
+    except FileNotFoundError:
+        print(f'Error: File {filename} not found.', file=sys.stderr)
+        sys.exit(1)
+
+    for sequence in ['A', 'B', 'C', 'D', 'E', 'F']:
+        result, operation_tracker, account_usage = handle_lines_with_sequence(input_lines, sequence)
+        if result:
+            print("\n".join(result))
+
+            unique_account = next((account for account, count in account_usage.items() if count == 1), None)
+
+            if unique_account is None:
+                continue
+            else:
+                # found unique account, change transfer to invoice
+                i = input_lines.index(unique_account)
+
+                start_i = max(0, i - 3)
+                end_i = i
+
+                transfer_request = None
+
+                for i in range(len(input_lines)):
+                    if input_lines[i] == operation_tracker.get('TRANSFER'):
+                        transfer_request = input_lines[i + 1]
+                        break
+
+                if transfer_request is not None and input_lines[start_i + 1] == operation_tracker.get('INVOICE'):
+                    input_lines[start_i + 1] = operation_tracker['TRANSFER']
+                    input_lines = input_lines[:start_i + 2] + [transfer_request] + input_lines[start_i + 2:]
+
+                    bindata = bytes.fromhex("".join(input_lines))
+                    with open('task4.out', 'wb') as out_file:
+                        out_file.write(bindata)
+            return
+
+if __name__ == '__main__':
+    main()

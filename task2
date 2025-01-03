@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+import sys
+from collections import defaultdict
+
+TRANSACTIONS = {'BALANCE': 2, 'TRANSFER': 5, 'INVOICE': 4}
+
+def initialize_requests(order, first_line):
+    """
+    Initialize requests based on the specified order.
+    """
+    default_request = {'BALANCE': -1, 'TRANSFER': -1, 'INVOICE': -1}
+    priority_map = {
+        'A': ['BALANCE', 'TRANSFER', 'INVOICE'],
+        'B': ['BALANCE', 'INVOICE', 'TRANSFER'],
+        'C': ['TRANSFER', 'BALANCE', 'INVOICE'],
+        'D': ['TRANSFER', 'INVOICE', 'BALANCE'],
+        'E': ['INVOICE', 'BALANCE', 'TRANSFER'],
+        'F': ['INVOICE', 'TRANSFER', 'BALANCE']
+    }
+    priorities = priority_map[order]
+    default_request[priorities[0]] = first_line
+    return default_request
+
+def process_transaction(requests, transaction_type, lines, i, account_counts, output):
+    """
+    Process a specific transaction type and update the necessary data structures.
+    """
+    output.append(transaction_type)
+    if transaction_type == 'BALANCE':
+        account_counts[lines[i - 1]] += 1
+        return i + TRANSACTIONS['BALANCE']
+    elif transaction_type == 'TRANSFER':
+        account_counts[lines[i - 1]] += 1
+        account_counts[lines[i + 3]] += 1
+        return i + TRANSACTIONS['TRANSFER']
+    elif transaction_type == 'INVOICE':
+        account_counts[lines[i - 1]] += 1
+        account_counts[lines[i + 2]] += 1
+        return i + TRANSACTIONS['INVOICE']
+
+def handle_fallback(order, requests, transaction_type, lines, i, account_counts, output):
+    """
+    Handle fallback logic when a transaction type is not initially defined.
+    """
+    if requests[transaction_type] == -1:
+        requests[transaction_type] = lines[i]
+        return process_transaction(requests, transaction_type, lines, i, account_counts, output)
+    return None
+
+def process_lines_with_order(lines, order):
+    i = 1  # Start at the second line
+    output = []
+    requests = initialize_requests(order, lines[i])
+    account_counts = defaultdict(int)
+
+    while i < len(lines):
+        for transaction_type in ['BALANCE', 'TRANSFER', 'INVOICE']:
+            if transaction_type in requests and requests[transaction_type] != -1 and lines[i] == requests[transaction_type]:
+                i = process_transaction(requests, transaction_type, lines, i, account_counts, output)
+                break
+        else:  # Fallback to the next priority in order
+            for fallback_type in ['TRANSFER', 'INVOICE', 'BALANCE']:
+                result = handle_fallback(order, requests, fallback_type, lines, i, account_counts, output)
+                if result:
+                    i = result
+                    break
+            else:
+                return [], {}, {}
+
+    return output, requests, account_counts
+
+def process_unique_account(lines, account_counts, requests):
+    """
+    Find and process the unique account to generate the output file.
+    """
+    unique_account = next((account for account, count in account_counts.items() if count == 1), None)
+    if not unique_account:
+        return None
+
+    i = lines.index(unique_account)
+    start_i = max(0, i - 4)
+    end_i = i
+
+    if lines[start_i + 1] == requests.get('TRANSFER'):
+        replay = lines[:]
+        replay.extend(lines[start_i:end_i + 1])
+
+        bindata = bytes.fromhex("".join(replay))
+        with open('task2.out', 'wb') as out_file:
+            out_file.write(bindata)
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: script.py <filename>", file=sys.stderr)
+        sys.exit(1)
+
+    filename = sys.argv[1]
+    try:
+        with open(filename, 'rb') as input_file:
+            lines = [data.hex() for data in iter(lambda: input_file.read(16), b'')]
+    except FileNotFoundError:
+        print(f"Error: File {filename} not found.", file=sys.stderr)
+        sys.exit(1)
+
+    for order in ['A', 'B', 'C', 'D', 'E', 'F']:
+        result, requests, account_counts = process_lines_with_order(lines, order)
+        if result:
+            print("\n".join(result))
+            process_unique_account(lines, account_counts, requests)
+            break
+
+if __name__ == '__main__':
+    main()
